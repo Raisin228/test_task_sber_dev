@@ -15,8 +15,8 @@ class GridWorld:
         self.grid_size = 5
 
         # Координаты агента, финиша и стены
-        self.start_pos = (4, 0)
-        self.goal_pos = (0, 4)
+        self.start_pos = (0, 4)
+        self.goal_pos = (4, 0)
         self.wall_pos = (2, 2)
 
         self.agent_pos = self.start_pos

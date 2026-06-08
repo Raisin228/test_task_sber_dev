@@ -19,10 +19,14 @@ def train(episodes=1000):
     agent = DQNAgent()
 
     if os.path.exists(WEIGHTS_FILE):
-        agent.load(WEIGHTS_FILE)
-        print(f"Найден файл весов '{WEIGHTS_FILE}' — обучение пропущено.")
-        _demo(env, agent)
-        return
+        saved_goal = agent.load(WEIGHTS_FILE)
+        if saved_goal is None or tuple(saved_goal) == env.goal_pos:
+            print(f"Найден файл весов '{WEIGHTS_FILE}' — обучение пропущено.")
+            _demo(env, agent)
+            return
+        print(f"Цель изменилась {saved_goal} → {env.goal_pos} — обучаю заново.")
+        os.remove(WEIGHTS_FILE)
+        agent = DQNAgent()
 
     episode_rewards = []
 
@@ -45,6 +49,7 @@ def train(episodes=1000):
                 break
 
         episode_rewards.append(total_reward)
+        agent.epsilon = max(agent.epsilon_min, agent.epsilon * agent.epsilon_decay)
 
         if (episode + 1) % 50 == 0:
             avg = np.mean(episode_rewards[-50:])
@@ -52,7 +57,7 @@ def train(episodes=1000):
                   f"Средняя награда (50 эп.): {avg:.2f} | "
                   f"ε = {agent.epsilon:.3f}")
 
-    agent.save(WEIGHTS_FILE)
+    agent.save(WEIGHTS_FILE, goal_pos=env.goal_pos)
     print(f"Веса сохранены в '{WEIGHTS_FILE}'")
     _save_plot(episode_rewards)
     print("График сохранён в learned_policy.png")

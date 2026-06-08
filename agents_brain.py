@@ -130,20 +130,31 @@ class DQNAgent:
         loss.backward()
         self.optimizer.step()
 
-        # уменьшаем epsil
-        self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
-
         # обновляем target
         self.steps_done += 1
         if self.steps_done % self.target_update_freq == 0:
             self.target_network.load_state_dict(self.main_network.state_dict())
 
-    def save(self, path: str) -> None:
-        """Сохранить веса основной сети."""
-        torch.save(self.main_network.state_dict(), path)
+    def save(self, path: str, goal_pos=None) -> None:
+        """Сохранить веса и конфигурацию цели."""
+        torch.save(
+            {"state_dict": self.main_network.state_dict(), "goal_pos": goal_pos},
+            path,
+        )
 
-    def load(self, path: str) -> None:
-        """Загрузить веса и синхронизировать target-сеть."""
-        self.main_network.load_state_dict(torch.load(path, weights_only=True))
+    def load(self, path: str):
+        """
+        Загрузить веса и синхронизировать target-сеть.
+
+        :return: сохранённая позиция цели или None (для старого формата файла).
+        """
+        checkpoint = torch.load(path, weights_only=False)
+        if isinstance(checkpoint, dict):
+            self.main_network.load_state_dict(checkpoint["state_dict"])
+            saved_goal = checkpoint.get("goal_pos")
+        else:
+            self.main_network.load_state_dict(checkpoint)
+            saved_goal = None
         self.target_network.load_state_dict(self.main_network.state_dict())
         self.epsilon = self.epsilon_min
+        return saved_goal
