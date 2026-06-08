@@ -16,7 +16,7 @@ class GridWorld:
 
         # Координаты агента, финиша и стены
         self.start_pos = (4, 0)
-        self.goal_pos = (4, 4)
+        self.goal_pos = (0, 4)
         self.wall_pos = (2, 2)
 
         self.agent_pos = self.start_pos
@@ -93,7 +93,3 @@ class GridWorld:
 
         row, col = self.agent_pos
         return np.array([row / self.grid_size, col / self.grid_size], dtype=np.float32)
-
-
-world = GridWorld()
-print(world.render())

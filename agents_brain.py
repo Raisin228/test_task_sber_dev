@@ -137,3 +137,13 @@ class DQNAgent:
         self.steps_done += 1
         if self.steps_done % self.target_update_freq == 0:
             self.target_network.load_state_dict(self.main_network.state_dict())
+
+    def save(self, path: str) -> None:
+        """Сохранить веса основной сети."""
+        torch.save(self.main_network.state_dict(), path)
+
+    def load(self, path: str) -> None:
+        """Загрузить веса и синхронизировать target-сеть."""
+        self.main_network.load_state_dict(torch.load(path, weights_only=True))
+        self.target_network.load_state_dict(self.main_network.state_dict())
+        self.epsilon = self.epsilon_min

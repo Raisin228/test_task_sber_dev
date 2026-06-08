@@ -38,10 +38,3 @@ class Network(nn.Module):
         """
 
         return self.network(state)
-
-
-model = Network()
-st = torch.tensor([0.8, 0.0], dtype=torch.float32)
-q_values = model(st)
-
-print(q_values)

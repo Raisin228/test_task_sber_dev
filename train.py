@@ -1,0 +1,123 @@
+"""Обучение сетки. Атрошенко Б. С."""
+
+import os
+import time
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+from world import GridWorld
+from agents_brain import DQNAgent
+
+WEIGHTS_FILE = "model_weights.pt"
+
+
+def train(episodes=1000):
+    """Тренировка сетки."""
+
+    env = GridWorld()
+    agent = DQNAgent()
+
+    if os.path.exists(WEIGHTS_FILE):
+        agent.load(WEIGHTS_FILE)
+        print(f"Найден файл весов '{WEIGHTS_FILE}' — обучение пропущено.")
+        _demo(env, agent)
+        return
+
+    episode_rewards = []
+
+    for episode in range(episodes):
+        state = env.reset()
+        done = False
+        steps = 0
+        total_reward = 0.0
+
+        while not done:
+            action = agent.act(state)
+            next_state, reward, done = env.step(action)
+            agent.remember(state, action, reward, next_state, done)
+            agent.learn()
+            state = next_state
+            total_reward += reward
+            steps += 1
+
+            if steps >= 300:
+                break
+
+        episode_rewards.append(total_reward)
+
+        if (episode + 1) % 50 == 0:
+            avg = np.mean(episode_rewards[-50:])
+            print(f"Эпизод {episode + 1}/{episodes} | "
+                  f"Средняя награда (50 эп.): {avg:.2f} | "
+                  f"ε = {agent.epsilon:.3f}")
+
+    agent.save(WEIGHTS_FILE)
+    print(f"Веса сохранены в '{WEIGHTS_FILE}'")
+    _save_plot(episode_rewards)
+    print("График сохранён в learned_policy.png")
+    _demo(env, agent)
+
+
+def _demo(env, agent):
+    """Прогон обученного агента с отрисовкой каждого шага."""
+    action_names = {0: "↑ вверх", 1: "↓ вниз", 2: "← лево", 3: "→ право"}
+
+    print("\n=== Демонстрация обученного агента ===")
+
+    saved_epsilon = agent.epsilon
+    agent.epsilon = 0.0  # чисто жадная политика
+
+    state = env.reset()
+    done = False
+    step = 0
+    total_reward = 0.0
+
+    env.render()
+    while not done and step < 50:
+        action = agent.act(state)
+        next_state, reward, done = env.step(action)
+        total_reward += reward
+        step += 1
+        print(f"Шаг {step}: {action_names[action]}, награда = {reward:+.1f}")
+        env.render()
+        time.sleep(0.3)
+
+    if done:
+        print(f"✓ Цель достигнута за {step} шагов. Суммарная награда: {total_reward:.2f}")
+    else:
+        print(f"✗ Цель не достигнута за {step} шагов. Суммарная награда: {total_reward:.2f}")
+
+    agent.epsilon = saved_epsilon
+
+
+def _save_plot(episode_rewards):
+    window = 20
+    smoothed = np.convolve(
+        episode_rewards,
+        np.ones(window) / window,
+        mode="valid"
+    )
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(episode_rewards, color="lightgray", alpha=0.6, label="награда за эпизод")
+    plt.plot(
+        range(window - 1, len(episode_rewards)),
+        smoothed,
+        color="steelblue",
+        linewidth=2,
+        label=f"среднее по {window} эпизодам",
+    )
+    plt.axhline(y=0, color="tomato", linestyle="--", alpha=0.5, label="нулевой уровень")
+    plt.xlabel("Эпизод")
+    plt.ylabel("Суммарная награда")
+    plt.title("Обучение DQN-агента — суммарная награда за эпизод")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.savefig("learned_policy.png", dpi=150)
+    plt.close()
+
+
+if __name__ == "__main__":
+    train()
