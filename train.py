@@ -12,7 +12,7 @@ from agents_brain import DQNAgent
 WEIGHTS_FILE = "model_weights.pt"
 
 
-def train(episodes=1000):
+def train(episodes=300):
     """Тренировка сетки."""
 
     env = GridWorld()
@@ -37,9 +37,10 @@ def train(episodes=1000):
         total_reward = 0.0
 
         while not done:
-            action = agent.act(state)
+            action = agent.act(state, valid_actions=env.valid_actions())
             next_state, reward, done = env.step(action)
-            agent.remember(state, action, reward, next_state, done)
+            next_valid = env.valid_actions()  # валидные действия уже из нового положения
+            agent.remember(state, action, reward, next_state, done, next_valid)
             agent.learn()
             state = next_state
             total_reward += reward
@@ -54,7 +55,7 @@ def train(episodes=1000):
         if (episode + 1) % 50 == 0:
             avg = np.mean(episode_rewards[-50:])
             print(f"Эпизод {episode + 1}/{episodes} | "
-                  f"Средняя награда (50 эп.): {avg:.2f} | "
+                  f"Средняя награда (50 эпс.): {avg:.2f} | "
                   f"ε = {agent.epsilon:.3f}")
 
     agent.save(WEIGHTS_FILE, goal_pos=env.goal_pos)
@@ -79,8 +80,8 @@ def _demo(env, agent):
     total_reward = 0.0
 
     env.render()
-    while not done and step < 50:
-        action = agent.act(state)
+    while not done and step < 20:
+        action = agent.act(state, valid_actions=env.valid_actions())
         next_state, reward, done = env.step(action)
         total_reward += reward
         step += 1

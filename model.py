@@ -12,7 +12,7 @@ class Network(nn.Module):
     Выход:
     """
 
-    def __init__(self, state_size=2, hidden_size=64, action_size=4):
+    def __init__(self, state_size=4, hidden_size=64, action_size=4):
         """
         Инициализатор.
 
