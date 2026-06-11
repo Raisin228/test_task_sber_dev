@@ -29,6 +29,7 @@ def train(episodes=300):
         agent = DQNAgent()
 
     episode_rewards = []
+    episode_lengths = []
 
     for episode in range(episodes):
         state = env.reset()
@@ -50,17 +51,20 @@ def train(episodes=300):
                 break
 
         episode_rewards.append(total_reward)
+        episode_lengths.append(steps)
         agent.epsilon = max(agent.epsilon_min, agent.epsilon * agent.epsilon_decay)
 
         if (episode + 1) % 50 == 0:
             avg = np.mean(episode_rewards[-50:])
+            avg_len = np.mean(episode_lengths[-50:])
             print(f"Эпизод {episode + 1}/{episodes} | "
                   f"Средняя награда (50 эпс.): {avg:.2f} | "
+                  f"Средняя длина (50 эпс.): {avg_len:.1f} | "
                   f"ε = {agent.epsilon:.3f}")
 
     agent.save(WEIGHTS_FILE, goal_pos=env.goal_pos)
     print(f"Веса сохранены в '{WEIGHTS_FILE}'")
-    _save_plot(episode_rewards)
+    _save_plot(episode_lengths)
     print("График сохранён в learned_policy.png")
     _demo(env, agent)
 
@@ -83,6 +87,7 @@ def _demo(env, agent):
     while not done and step < 20:
         action = agent.act(state, valid_actions=env.valid_actions())
         next_state, reward, done = env.step(action)
+        state = next_state
         total_reward += reward
         step += 1
         print(f"Шаг {step}: {action_names[action]}, награда = {reward:+.1f}")
@@ -90,34 +95,33 @@ def _demo(env, agent):
         time.sleep(0.3)
 
     if done:
-        print(f"✓ Цель достигнута за {step} шагов. Суммарная награда: {total_reward:.2f}")
+        print(f"Цель достигнута за {step} шагов. Суммарная награда: {total_reward:.2f}")
     else:
-        print(f"✗ Цель не достигнута за {step} шагов. Суммарная награда: {total_reward:.2f}")
+        print(f"Цель не достигнута за {step} шагов. Суммарная награда: {total_reward:.2f}")
 
     agent.epsilon = saved_epsilon
 
 
-def _save_plot(episode_rewards):
+def _save_plot(episode_lengths):
     window = 20
     smoothed = np.convolve(
-        episode_rewards,
+        episode_lengths,
         np.ones(window) / window,
         mode="valid"
     )
 
     plt.figure(figsize=(10, 5))
-    plt.plot(episode_rewards, color="lightgray", alpha=0.6, label="награда за эпизод")
+    plt.plot(episode_lengths, color="lightgray", alpha=0.6, label="длина эпизода")
     plt.plot(
-        range(window - 1, len(episode_rewards)),
+        range(window - 1, len(episode_lengths)),
         smoothed,
         color="steelblue",
         linewidth=2,
         label=f"среднее по {window} эпизодам",
     )
-    plt.axhline(y=0, color="tomato", linestyle="--", alpha=0.5, label="нулевой уровень")
     plt.xlabel("Эпизод")
-    plt.ylabel("Суммарная награда")
-    plt.title("Обучение DQN-агента — суммарная награда за эпизод")
+    plt.ylabel("Число шагов до цели")
+    plt.title("Обучение DQN-агента — длина эпизода от итерации")
     plt.legend()
     plt.grid(alpha=0.3)
     plt.tight_layout()

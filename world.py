@@ -19,9 +19,9 @@ class GridWorld:
         #  . . █ █ █
         #  . . . . .
         #  █ █ █ . .
-        #  . . . . G
+        #  G . . . .
         self.start_pos = (0, 0)
-        self.goal_pos = (4, 4)
+        self.goal_pos = (4, 0)
         self.wall_pos = [(1, 2), (1, 3), (1, 4), (3, 0), (3, 1), (3, 2)]
 
         self.agent_pos = self.start_pos

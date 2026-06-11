@@ -53,7 +53,7 @@ class DQNAgent:
             gamma=0.99,
             epsilon=1.0,
             epsilon_min=0.01,
-            epsilon_decay=0.995,
+            epsilon_decay=0.985,
             batch_size=32,
             tau=0.005,
     ):
@@ -65,8 +65,8 @@ class DQNAgent:
         self.batch_size = batch_size
         self.tau = tau  # коэффициент мягкого обновления target-сети
 
-        self.main_network = Network(state_size, action_size)
-        self.target_network = Network(state_size, action_size)
+        self.main_network = Network(state_size=state_size, action_size=action_size)
+        self.target_network = Network(state_size=state_size, action_size=action_size)
 
         self.target_network.load_state_dict(self.main_network.state_dict())
         self.target_network.eval()
